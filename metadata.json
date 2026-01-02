@@ -1,0 +1,5 @@
+{
+  "name": "NutriScan AI",
+  "description": "Analisi nutrizionale istantanea dai tuoi piatti. Carica una foto per ottenere calorie, macronutrienti e porzioni stimate.",
+  "requestFramePermissions": []
+}
