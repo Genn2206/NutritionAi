@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { AnalysisResult } from "../types";
+import { AnalysisResult, Language } from "../types";
 
 // Initialize Gemini Client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -19,24 +19,28 @@ export const fileToGenerativePart = async (file: File): Promise<string> => {
   });
 };
 
-export const analyzeFoodImage = async (file: File): Promise<AnalysisResult> => {
+export const analyzeFoodImage = async (file: File, language: Language): Promise<AnalysisResult> => {
   const base64Data = await fileToGenerativePart(file);
 
   // Use Gemini 3 Pro for higher accuracy and reasoning capabilities
   const modelId = "gemini-3-pro-preview";
 
+  const isIt = language === 'it';
+  
   const prompt = `
-    Agisci come un analista nutrizionale clinico di alto livello. Il tuo obiettivo è fornire una stima nutrizionale estremamente accurata analizzando l'immagine fornita.
+    Act as a high-level clinical nutritional analyst. Your goal is to provide an extremely accurate nutritional estimate by analyzing the provided image.
+    
+    **IMPORTANT: PROVIDE THE OUTPUT IN ${isIt ? 'ITALIAN' : 'ENGLISH'}.**
 
-    Fasi di Analisi (usa il tuo Thinking Process per questo):
-    1.  **Scansione Visiva e Riferimenti**: Cerca elementi di dimensione nota (posate standard, bicchieri, bordi del piatto) per stabilire una scala geometrica precisa. Se non ci sono riferimenti chiari, assumi un piatto piano standard (26-28cm) ma aumenta il margine di incertezza.
-    2.  **Scomposizione del Piatto**: Identifica ogni ingrediente visibile. Per piatti composti (es. lasagne, panini, insalate miste), stima il volume dei singoli componenti (es. 120g pasta cotta, 40g ragù, 10g parmigiano).
-    3.  **Densità e Cottura**: Considera la densità (es. l'insalata è voluminosa ma leggera, la carne è densa). Considera l'assorbimento di olio in fritture o soffritti (segni di lucentezza).
-    4.  **Calcolo Rigoroso**: Usa dati nutrizionali medi standard. Se c'è dubbio sui condimenti, sii prudentemente conservativo (sovrastima le calorie da grassi nascosti).
+    Analysis Phases (use your Thinking Process for this):
+    1.  **Visual Scan & References**: Look for items of known size (standard cutlery, glasses, plate rims) to establish a precise geometric scale. If clear references are missing, assume a standard dinner plate (26-28cm) but increase the uncertainty margin.
+    2.  **Dish Decomposition**: Identify every visible ingredient. For composite dishes (e.g., lasagna, sandwiches, mixed salads), estimate the volume of individual components (e.g., 120g cooked pasta, 40g ragu, 10g parmesan).
+    3.  **Density & Cooking**: Consider density (e.g., salad is voluminous but light, meat is dense). Consider oil absorption in fried foods or sautés (shininess signs).
+    4.  **Rigorous Calculation**: Use standard average nutritional data. If in doubt about dressings, be prudently conservative (overestimate calories from hidden fats).
 
-    Output richiesto:
-    Restituisci un oggetto JSON con gli ingredienti, le porzioni in grammi e i valori nutrizionali.
-    Nel campo 'reliabilityNote', spiega specificamente quali riferimenti visivi hai usato per dedurre il peso (es. "Stimato basandosi sulla dimensione della forchetta standard visibile a sinistra...").
+    Required Output:
+    Return a JSON object with ingredients, portions in grams, and nutritional values.
+    In the 'reliabilityNote' field, explain specifically what visual references you used to deduce the weight in ${isIt ? 'Italian' : 'English'} (e.g., "${isIt ? 'Stimato basandosi sulla dimensione...' : 'Estimated based on the size of...'}").
   `;
 
   const response = await ai.models.generateContent({
@@ -68,16 +72,16 @@ export const analyzeFoodImage = async (file: File): Promise<AnalysisResult> => {
             items: {
               type: Type.OBJECT,
               properties: {
-                name: { type: Type.STRING, description: "Nome dell'alimento in Italiano" },
-                category: { type: Type.STRING, description: "Categoria nutrizionale (es. Carboidrati, Proteine, Verdure)" },
-                portionGrams: { type: Type.NUMBER, description: "Stima accurata in grammi" },
-                calories: { type: Type.NUMBER, description: "Kcal totali per la porzione" },
+                name: { type: Type.STRING, description: `Name of the food item in ${isIt ? 'Italian' : 'English'}` },
+                category: { type: Type.STRING, description: `Nutritional category in ${isIt ? 'Italian' : 'English'}` },
+                portionGrams: { type: Type.NUMBER, description: "Accurate estimate in grams" },
+                calories: { type: Type.NUMBER, description: "Total kcal for the portion" },
                 macros: {
                   type: Type.OBJECT,
                   properties: {
-                    protein: { type: Type.NUMBER, description: "Proteine (g)" },
-                    carbs: { type: Type.NUMBER, description: "Carboidrati (g)" },
-                    fat: { type: Type.NUMBER, description: "Grassi (g)" },
+                    protein: { type: Type.NUMBER, description: "Protein (g)" },
+                    carbs: { type: Type.NUMBER, description: "Carbs (g)" },
+                    fat: { type: Type.NUMBER, description: "Fat (g)" },
                   },
                   required: ["protein", "carbs", "fat"],
                 },
@@ -95,8 +99,8 @@ export const analyzeFoodImage = async (file: File): Promise<AnalysisResult> => {
             },
             required: ["protein", "carbs", "fat"],
           },
-          reliabilityNote: { type: Type.STRING, description: "Spiegazione tecnica della stima visiva e dei riferimenti usati" },
-          reliabilityScore: { type: Type.NUMBER, description: "Punteggio di confidenza da 0 a 100" },
+          reliabilityNote: { type: Type.STRING, description: `Technical explanation of visual estimation and references used in ${isIt ? 'Italian' : 'English'}` },
+          reliabilityScore: { type: Type.NUMBER, description: "Confidence score from 0 to 100" },
         },
         required: ["items", "totalCalories", "totalMacros", "reliabilityNote", "reliabilityScore"],
       },

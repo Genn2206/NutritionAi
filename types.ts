@@ -1,3 +1,5 @@
+export type Language = 'it' | 'en';
+
 export interface Macronutrients {
   protein: number;
   carbs: number;

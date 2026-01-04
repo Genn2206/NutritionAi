@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ImageUploaderProps {
   onImageSelected: (file: File) => void;
@@ -9,6 +10,7 @@ interface ImageUploaderProps {
 export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelected, isLoading }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
+  const { t } = useLanguage();
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -38,7 +40,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelected, i
 
   const handleFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert("Per favore carica un file immagine valido.");
+      alert("Please upload a valid image file.");
       return;
     }
     onImageSelected(file);
@@ -72,8 +74,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelected, i
         {isLoading ? (
           <>
             <Loader2 className="h-12 w-12 text-emerald-600 animate-spin mb-4" />
-            <p className="text-lg font-medium text-slate-700">Analisi in corso...</p>
-            <p className="text-sm text-slate-500">Stiamo identificando gli ingredienti</p>
+            <p className="text-lg font-medium text-slate-700">{t.analyzing_title}</p>
+            <p className="text-sm text-slate-500">{t.analyzing_desc}</p>
           </>
         ) : (
           <>
@@ -81,13 +83,13 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelected, i
               <Upload className={`h-8 w-8 ${dragActive ? "text-emerald-500" : "text-slate-400"}`} />
             </div>
             <h3 className="text-xl font-semibold text-slate-800 mb-2">
-              Carica la foto del tuo piatto
+              {t.upload_drag}
             </h3>
             <p className="text-slate-500 max-w-sm mb-6">
-              Trascina l'immagine qui o clicca per selezionarla dalla galleria.
+              {t.upload_subtext}
             </p>
             <button className="px-6 py-2.5 bg-emerald-600 text-white rounded-lg font-medium shadow-sm hover:bg-emerald-700 transition-colors">
-              Seleziona Immagine
+              {t.upload_button}
             </button>
           </>
         )}

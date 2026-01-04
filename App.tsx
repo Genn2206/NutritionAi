@@ -5,6 +5,7 @@ import { AnalysisResults } from './components/AnalysisResults';
 import { analyzeFoodImage } from './services/geminiService';
 import { AnalysisResult } from './types';
 import { ScanSearch } from 'lucide-react';
+import { useLanguage } from './contexts/LanguageContext';
 
 const App: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -12,6 +13,8 @@ const App: React.FC = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     // Cleanup object URL when file changes
@@ -30,11 +33,11 @@ const App: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const analysis = await analyzeFoodImage(selectedFile);
+      const analysis = await analyzeFoodImage(selectedFile, language);
       setResult(analysis);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Si è verificato un errore durante l'analisi dell'immagine. Riprova.");
+      setError(err.message || t.error_generic);
     } finally {
       setIsLoading(false);
     }
@@ -58,11 +61,10 @@ const App: React.FC = () => {
             <div className="max-w-2xl mx-auto mt-8 md:mt-16 text-center space-y-8 animate-fade-in-up">
               <div>
                 <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
-                  Cosa stai mangiando?
+                  {t.hero_title}
                 </h2>
                 <p className="text-lg text-slate-600 max-w-lg mx-auto leading-relaxed">
-                  Carica una foto del tuo piatto. La nostra AI identificherà gli ingredienti, 
-                  stimerà le porzioni e calcolerà i valori nutrizionali in pochi secondi.
+                  {t.hero_subtitle}
                 </p>
               </div>
 
@@ -72,16 +74,16 @@ const App: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-3xl mx-auto pt-8">
                 <Feature 
-                  title="Riconoscimento Istantaneo" 
-                  desc="Identifica ingredienti complessi e piatti pronti."
+                  title={t.feature_recognition_title} 
+                  desc={t.feature_recognition_desc}
                 />
                 <Feature 
-                  title="Stima Porzioni" 
-                  desc="Calcolo del peso basato su riferimenti visivi."
+                  title={t.feature_portion_title} 
+                  desc={t.feature_portion_desc}
                 />
                 <Feature 
-                  title="Analisi Completa" 
-                  desc="Calorie e macro dettagliati per ogni ingrediente."
+                  title={t.feature_analysis_title} 
+                  desc={t.feature_analysis_desc}
                 />
               </div>
             </div>
@@ -92,8 +94,8 @@ const App: React.FC = () => {
                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 inline-block mb-8">
                 <img src={imagePreview} className="w-64 h-64 object-cover rounded-xl opacity-50" alt="Processing" />
                </div>
-               <h3 className="text-2xl font-bold text-slate-800">Analisi in corso...</h3>
-               <p className="text-slate-500 mt-2">Stiamo interrogando il database nutrizionale</p>
+               <h3 className="text-2xl font-bold text-slate-800">{t.analyzing_title}</h3>
+               <p className="text-slate-500 mt-2">{t.analyzing_desc}</p>
             </div>
           )}
 
@@ -104,7 +106,7 @@ const App: React.FC = () => {
                 onClick={handleReset}
                 className="text-sm font-semibold text-red-700 hover:text-red-800 underline"
               >
-                Riprova con un'altra immagine
+                {t.error_retry}
               </button>
             </div>
           )}
@@ -123,7 +125,7 @@ const App: React.FC = () => {
       <footer className="bg-white border-t border-slate-200 py-8 mt-auto">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-slate-400 text-sm">
-            © {new Date().getFullYear()} NutriScan AI. Non sostituisce il parere medico professionale.
+            © {new Date().getFullYear()} NutriScan AI. 
           </p>
         </div>
       </footer>

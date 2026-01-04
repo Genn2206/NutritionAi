@@ -2,6 +2,7 @@ import React from 'react';
 import { AnalysisResult, FoodItem } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { AlertTriangle, CheckCircle2, Flame, Wheat, Beef, Droplet } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AnalysisResultsProps {
   result: AnalysisResult;
@@ -12,11 +13,12 @@ interface AnalysisResultsProps {
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b']; // Protein (Green), Carbs (Blue), Fat (Orange)
 
 export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imagePreview, onReset }) => {
+  const { t } = useLanguage();
   
   const chartData = [
-    { name: 'Proteine', value: result.totalMacros.protein, fill: COLORS[0] },
-    { name: 'Carboidrati', value: result.totalMacros.carbs, fill: COLORS[1] },
-    { name: 'Grassi', value: result.totalMacros.fat, fill: COLORS[2] },
+    { name: t.macro_protein, value: result.totalMacros.protein, fill: COLORS[0] },
+    { name: t.macro_carbs, value: result.totalMacros.carbs, fill: COLORS[1] },
+    { name: t.macro_fat, value: result.totalMacros.fat, fill: COLORS[2] },
   ];
 
   // Helper for rendering reliability badge
@@ -40,7 +42,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
                 className="w-full h-full object-cover"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                <p className="text-white font-medium text-sm">Immagine Analizzata</p>
+                <p className="text-white font-medium text-sm">{t.results_image_label}</p>
               </div>
             </div>
           </div>
@@ -48,20 +50,20 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
               <Flame className="text-orange-500 h-5 w-5" />
-              Totale Energetico
+              {t.results_total_energy}
             </h3>
             <div className="flex items-baseline gap-2 mb-2">
               <span className="text-4xl font-extrabold text-slate-900">{result.totalCalories}</span>
               <span className="text-slate-500 font-medium">kcal</span>
             </div>
-            <p className="text-sm text-slate-500">Stima totale per il piatto riconosciuto.</p>
+            <p className="text-sm text-slate-500">{t.results_total_desc}</p>
           </div>
           
            {/* Reliability Card */}
            <div className={`rounded-2xl border p-5 ${getReliabilityColor(result.reliabilityScore)}`}>
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="h-5 w-5" />
-              <h4 className="font-bold">Affidabilità stima: {result.reliabilityScore}%</h4>
+              <h4 className="font-bold">{t.results_reliability}: {result.reliabilityScore}%</h4>
             </div>
             <p className="text-sm opacity-90 leading-relaxed">
               {result.reliabilityNote}
@@ -72,7 +74,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
             onClick={onReset}
             className="w-full py-3 bg-white border border-slate-300 text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-colors"
           >
-            Analizza un'altra foto
+            {t.results_analyze_another}
           </button>
         </div>
 
@@ -81,7 +83,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
           
           {/* Macro Chart */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <h3 className="text-lg font-bold text-slate-800 mb-6">Ripartizione Macronutrienti</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-6">{t.macro_breakdown}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
               <div className="h-64 w-full relative">
                  <ResponsiveContainer width="100%" height="100%">
@@ -118,8 +120,8 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
                         <Beef className="h-5 w-5 text-emerald-600" />
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-900">Proteine</p>
-                        <p className="text-xs text-slate-500">Costruzione muscolare</p>
+                        <p className="font-semibold text-slate-900">{t.macro_protein}</p>
+                        <p className="text-xs text-slate-500">{t.macro_protein_desc}</p>
                       </div>
                     </div>
                     <span className="text-xl font-bold text-emerald-700">{result.totalMacros.protein}g</span>
@@ -131,8 +133,8 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
                         <Wheat className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-900">Carboidrati</p>
-                        <p className="text-xs text-slate-500">Energia rapida</p>
+                        <p className="font-semibold text-slate-900">{t.macro_carbs}</p>
+                        <p className="text-xs text-slate-500">{t.macro_carbs_desc}</p>
                       </div>
                     </div>
                     <span className="text-xl font-bold text-blue-700">{result.totalMacros.carbs}g</span>
@@ -144,8 +146,8 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
                          <Droplet className="h-5 w-5 text-amber-600" />
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-900">Grassi</p>
-                        <p className="text-xs text-slate-500">Energia e ormoni</p>
+                        <p className="font-semibold text-slate-900">{t.macro_fat}</p>
+                        <p className="text-xs text-slate-500">{t.macro_fat_desc}</p>
                       </div>
                     </div>
                     <span className="text-xl font-bold text-amber-700">{result.totalMacros.fat}g</span>
@@ -157,23 +159,23 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
           {/* Ingredients Table */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="p-6 border-b border-slate-100 bg-slate-50/50">
-              <h3 className="text-lg font-bold text-slate-800">Dettaglio Ingredienti</h3>
+              <h3 className="text-lg font-bold text-slate-800">{t.table_title}</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="text-xs font-semibold tracking-wide text-slate-500 uppercase border-b border-slate-100 bg-slate-50/50">
-                    <th className="px-6 py-4">Ingrediente</th>
-                    <th className="px-6 py-4">Porzione (g)</th>
-                    <th className="px-6 py-4">Calorie</th>
-                    <th className="px-6 py-4">Macros (P/C/G)</th>
+                    <th className="px-6 py-4">{t.table_col_ingredient}</th>
+                    <th className="px-6 py-4">{t.table_col_portion}</th>
+                    <th className="px-6 py-4">{t.table_col_calories}</th>
+                    <th className="px-6 py-4">{t.table_col_macros}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {result.items.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
-                        Nessun ingrediente specifico identificato.
+                        {t.table_empty}
                       </td>
                     </tr>
                   ) : (
@@ -206,7 +208,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
               </table>
             </div>
             <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 text-xs text-slate-500">
-              * I valori nutrizionali sono stime basate su database standard e porzioni visive.
+              {t.table_disclaimer}
             </div>
           </div>
         </div>
