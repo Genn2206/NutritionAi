@@ -3,7 +3,7 @@ import { Header } from './components/Header';
 import { ImageUploader } from './components/ImageUploader';
 import { AnalysisResults } from './components/AnalysisResults';
 import { analyzeFoodImage } from './services/geminiService';
-import { AnalysisResult } from './types';
+import { AnalysisResult, PlateSize } from './types';
 import { ScanSearch } from 'lucide-react';
 import { useLanguage } from './contexts/LanguageContext';
 
@@ -13,6 +13,8 @@ const App: React.FC = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [plateSize, setPlateSize] = useState<PlateSize>('medium');
+  const [wasCorrected, setWasCorrected] = useState(false);
   
   const { t, language } = useLanguage();
 
@@ -30,10 +32,18 @@ const App: React.FC = () => {
     setImagePreview(URL.createObjectURL(selectedFile));
     setError(null);
     setResult(null);
+    setWasCorrected(false);
     setIsLoading(true);
 
     try {
-      const analysis = await analyzeFoodImage(selectedFile, language);
+      const analysis = await analyzeFoodImage(selectedFile, language, plateSize);
+      
+      // Check for auto-correction
+      if (analysis.detectedPlateSize && analysis.detectedPlateSize !== plateSize) {
+        setPlateSize(analysis.detectedPlateSize);
+        setWasCorrected(true);
+      }
+
       setResult(analysis);
     } catch (err: any) {
       console.error(err);
@@ -48,6 +58,7 @@ const App: React.FC = () => {
     setImagePreview(null);
     setResult(null);
     setError(null);
+    setWasCorrected(false);
   };
 
   return (
@@ -69,7 +80,12 @@ const App: React.FC = () => {
               </div>
 
               <div className="bg-white p-2 rounded-3xl shadow-lg border border-slate-100">
-                <ImageUploader onImageSelected={handleImageSelected} isLoading={isLoading} />
+                <ImageUploader 
+                  onImageSelected={handleImageSelected} 
+                  isLoading={isLoading} 
+                  selectedPlateSize={plateSize}
+                  onPlateSizeChange={setPlateSize}
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-3xl mx-auto pt-8">
@@ -116,6 +132,7 @@ const App: React.FC = () => {
               result={result} 
               imagePreview={imagePreview}
               onReset={handleReset}
+              wasCorrected={wasCorrected}
             />
           )}
 

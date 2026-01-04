@@ -9,6 +9,12 @@ interface Translations {
   hero_title: string;
   hero_subtitle: string;
   
+  plate_size_label: string;
+  plate_small: string;
+  plate_medium: string;
+  plate_large: string;
+  plate_bowl: string;
+
   upload_drag: string;
   upload_button: string;
   upload_subtext: string;
@@ -25,9 +31,13 @@ interface Translations {
   error_generic: string;
   error_retry: string;
   
+  correction_alert_title: string;
+  correction_alert_desc: string;
+
   results_image_label: string;
   results_total_energy: string;
   results_total_desc: string;
+  results_range_label: string;
   results_reliability: string;
   results_analyze_another: string;
   
@@ -40,6 +50,7 @@ interface Translations {
   macro_fat_desc: string;
   
   table_title: string;
+  table_edit_hint: string;
   table_col_ingredient: string;
   table_col_portion: string;
   table_col_calories: string;
@@ -51,12 +62,18 @@ interface Translations {
 const translations: Record<Language, Translations> = {
   it: {
     header_title: "NutriScan AI",
-    header_subtitle: "Food Recognition System",
+    header_subtitle: "Sistema di Riconoscimento Cibo",
     powered_by: "Powered by Gemini 3 Pro",
     
     hero_title: "Cosa stai mangiando?",
     hero_subtitle: "Carica una foto del tuo piatto. La nostra AI identificherà gli ingredienti, stimerà le porzioni e calcolerà i valori nutrizionali in pochi secondi.",
     
+    plate_size_label: "Dimensione del piatto (per stima accurata)",
+    plate_small: "Piattino (Dessert)",
+    plate_medium: "Piatto Standard",
+    plate_large: "Piatto Grande",
+    plate_bowl: "Ciotola / Scodella",
+
     upload_drag: "Carica la foto del tuo piatto",
     upload_button: "Seleziona Immagine",
     upload_subtext: "Trascina l'immagine qui o clicca per selezionarla.",
@@ -73,9 +90,13 @@ const translations: Record<Language, Translations> = {
     error_generic: "Si è verificato un errore durante l'analisi dell'immagine. Riprova.",
     error_retry: "Riprova con un'altra immagine",
     
+    correction_alert_title: "Dimensione piatto corretta automaticamente",
+    correction_alert_desc: "L'AI ha rilevato che la dimensione del piatto selezionata non corrispondeva all'immagine. È stata corretta per garantire porzioni precise.",
+
     results_image_label: "Immagine Analizzata",
     results_total_energy: "Totale Energetico",
     results_total_desc: "Stima totale per il piatto riconosciuto.",
+    results_range_label: "Intervallo Stimato",
     results_reliability: "Affidabilità stima",
     results_analyze_another: "Analizza un'altra foto",
     
@@ -88,6 +109,7 @@ const translations: Record<Language, Translations> = {
     macro_fat_desc: "Energia e ormoni",
     
     table_title: "Dettaglio Ingredienti",
+    table_edit_hint: "Clicca sui grammi per modificare e ricalcolare",
     table_col_ingredient: "Ingrediente",
     table_col_portion: "Porzione (g)",
     table_col_calories: "Calorie",
@@ -103,6 +125,12 @@ const translations: Record<Language, Translations> = {
     hero_title: "What are you eating?",
     hero_subtitle: "Upload a photo of your meal. Our AI will identify ingredients, estimate portions, and calculate nutritional values in seconds.",
     
+    plate_size_label: "Plate Size (for accurate scaling)",
+    plate_small: "Small (Dessert)",
+    plate_medium: "Standard Plate",
+    plate_large: "Large Platter",
+    plate_bowl: "Bowl",
+
     upload_drag: "Upload your meal photo",
     upload_button: "Select Image",
     upload_subtext: "Drag the image here or click to select from gallery.",
@@ -119,9 +147,13 @@ const translations: Record<Language, Translations> = {
     error_generic: "An error occurred during image analysis. Please try again.",
     error_retry: "Try with another image",
     
+    correction_alert_title: "Plate size auto-corrected",
+    correction_alert_desc: "AI detected that the selected plate size didn't match the image visuals. It was adjusted to ensure accurate portions.",
+
     results_image_label: "Analyzed Image",
     results_total_energy: "Total Energy",
     results_total_desc: "Total estimate for the recognized dish.",
+    results_range_label: "Estimated Range",
     results_reliability: "Estimation Confidence",
     results_analyze_another: "Analyze another photo",
     
@@ -134,6 +166,7 @@ const translations: Record<Language, Translations> = {
     macro_fat_desc: "Energy & hormones",
     
     table_title: "Ingredient Details",
+    table_edit_hint: "Click grams to edit & recalculate",
     table_col_ingredient: "Ingredient",
     table_col_portion: "Portion (g)",
     table_col_calories: "Calories",
@@ -152,7 +185,8 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('it');
+  // Set default language to 'en'
+  const [language, setLanguage] = useState<Language>('en');
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t: translations[language] }}>

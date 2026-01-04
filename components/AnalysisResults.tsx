@@ -1,24 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnalysisResult, FoodItem } from '../types';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { AlertTriangle, CheckCircle2, Flame, Wheat, Beef, Droplet } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { AlertTriangle, CheckCircle2, Flame, Wheat, Beef, Droplet, Edit2, Info } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface AnalysisResultsProps {
   result: AnalysisResult;
   imagePreview: string;
   onReset: () => void;
+  wasCorrected?: boolean;
 }
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b']; // Protein (Green), Carbs (Blue), Fat (Orange)
 
-export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imagePreview, onReset }) => {
+export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result: initialResult, imagePreview, onReset, wasCorrected }) => {
   const { t } = useLanguage();
-  
+  const [currentResult, setCurrentResult] = useState<AnalysisResult>(initialResult);
+
+  // Update local state if the prop changes (e.g. new analysis)
+  useEffect(() => {
+    setCurrentResult(initialResult);
+  }, [initialResult]);
+
   const chartData = [
-    { name: t.macro_protein, value: result.totalMacros.protein, fill: COLORS[0] },
-    { name: t.macro_carbs, value: result.totalMacros.carbs, fill: COLORS[1] },
-    { name: t.macro_fat, value: result.totalMacros.fat, fill: COLORS[2] },
+    { name: t.macro_protein, value: currentResult.totalMacros.protein, fill: COLORS[0] },
+    { name: t.macro_carbs, value: currentResult.totalMacros.carbs, fill: COLORS[1] },
+    { name: t.macro_fat, value: currentResult.totalMacros.fat, fill: COLORS[2] },
   ];
 
   // Helper for rendering reliability badge
@@ -28,8 +35,68 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
     return 'text-red-700 bg-red-100 border-red-200';
   };
 
+  const handlePortionChange = (index: number, newGramsStr: string) => {
+    const newGrams = parseFloat(newGramsStr);
+    if (isNaN(newGrams) || newGrams < 0) return;
+
+    setCurrentResult(prev => {
+      const newItems = [...prev.items];
+      const item = newItems[index];
+      const oldGrams = item.portionGrams;
+      
+      // Calculate ratio
+      const ratio = oldGrams > 0 ? newGrams / oldGrams : 1;
+
+      // Update item
+      newItems[index] = {
+        ...item,
+        portionGrams: newGrams,
+        calories: Math.round(item.calories * ratio),
+        minCalories: Math.round(item.minCalories * ratio),
+        maxCalories: Math.round(item.maxCalories * ratio),
+        macros: {
+          protein: parseFloat((item.macros.protein * ratio).toFixed(1)),
+          carbs: parseFloat((item.macros.carbs * ratio).toFixed(1)),
+          fat: parseFloat((item.macros.fat * ratio).toFixed(1)),
+        }
+      };
+
+      // Recalculate totals
+      const newTotalCalories = newItems.reduce((acc, curr) => acc + curr.calories, 0);
+      const newMinTotal = newItems.reduce((acc, curr) => acc + curr.minCalories, 0);
+      const newMaxTotal = newItems.reduce((acc, curr) => acc + curr.maxCalories, 0);
+      
+      const newTotalMacros = newItems.reduce((acc, curr) => ({
+        protein: parseFloat((acc.protein + curr.macros.protein).toFixed(1)),
+        carbs: parseFloat((acc.carbs + curr.macros.carbs).toFixed(1)),
+        fat: parseFloat((acc.fat + curr.macros.fat).toFixed(1)),
+      }), { protein: 0, carbs: 0, fat: 0 });
+
+      return {
+        ...prev,
+        items: newItems,
+        totalCalories: newTotalCalories,
+        minTotalCalories: newMinTotal,
+        maxTotalCalories: newMaxTotal,
+        totalMacros: newTotalMacros
+      };
+    });
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto animate-fade-in pb-12">
+      {wasCorrected && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 animate-slide-down">
+          <div className="p-2 bg-amber-100 rounded-lg shrink-0">
+             <Info className="h-5 w-5 text-amber-600" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-amber-900">{t.correction_alert_title}</h4>
+            <p className="text-sm text-amber-700 mt-1">{t.correction_alert_desc}</p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Column 1: Image & Summary */}
@@ -53,20 +120,31 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
               {t.results_total_energy}
             </h3>
             <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-4xl font-extrabold text-slate-900">{result.totalCalories}</span>
+              <span className="text-4xl font-extrabold text-slate-900">{currentResult.totalCalories}</span>
               <span className="text-slate-500 font-medium">kcal</span>
             </div>
-            <p className="text-sm text-slate-500">{t.results_total_desc}</p>
+            
+            {/* Range Indicator */}
+            <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-100 inline-block w-full">
+              <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold mb-1">
+                {t.results_range_label}
+              </p>
+              <p className="text-sm font-mono text-slate-700">
+                {currentResult.minTotalCalories} - {currentResult.maxTotalCalories} kcal
+              </p>
+            </div>
+            
+            <p className="text-sm text-slate-500 mt-3">{t.results_total_desc}</p>
           </div>
           
            {/* Reliability Card */}
-           <div className={`rounded-2xl border p-5 ${getReliabilityColor(result.reliabilityScore)}`}>
+           <div className={`rounded-2xl border p-5 ${getReliabilityColor(currentResult.reliabilityScore)}`}>
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="h-5 w-5" />
-              <h4 className="font-bold">{t.results_reliability}: {result.reliabilityScore}%</h4>
+              <h4 className="font-bold">{t.results_reliability}: {currentResult.reliabilityScore}%</h4>
             </div>
             <p className="text-sm opacity-90 leading-relaxed">
-              {result.reliabilityNote}
+              {currentResult.reliabilityNote}
             </p>
           </div>
 
@@ -124,7 +202,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
                         <p className="text-xs text-slate-500">{t.macro_protein_desc}</p>
                       </div>
                     </div>
-                    <span className="text-xl font-bold text-emerald-700">{result.totalMacros.protein}g</span>
+                    <span className="text-xl font-bold text-emerald-700">{currentResult.totalMacros.protein}g</span>
                  </div>
 
                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl border border-blue-100">
@@ -137,7 +215,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
                         <p className="text-xs text-slate-500">{t.macro_carbs_desc}</p>
                       </div>
                     </div>
-                    <span className="text-xl font-bold text-blue-700">{result.totalMacros.carbs}g</span>
+                    <span className="text-xl font-bold text-blue-700">{currentResult.totalMacros.carbs}g</span>
                  </div>
 
                  <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-100">
@@ -150,7 +228,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
                         <p className="text-xs text-slate-500">{t.macro_fat_desc}</p>
                       </div>
                     </div>
-                    <span className="text-xl font-bold text-amber-700">{result.totalMacros.fat}g</span>
+                    <span className="text-xl font-bold text-amber-700">{currentResult.totalMacros.fat}g</span>
                  </div>
               </div>
             </div>
@@ -158,8 +236,12 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
 
           {/* Ingredients Table */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-800">{t.table_title}</h3>
+              <span className="text-xs text-slate-500 italic flex items-center gap-1">
+                <Edit2 size={12} />
+                {t.table_edit_hint}
+              </span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -172,15 +254,15 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {result.items.length === 0 ? (
+                  {currentResult.items.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
                         {t.table_empty}
                       </td>
                     </tr>
                   ) : (
-                    result.items.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                    currentResult.items.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50 transition-colors group">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -191,12 +273,25 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, imageP
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600 font-medium">
-                          {item.portionGrams}g
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              className="w-20 px-2 py-1 rounded border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-right font-medium"
+                              value={item.portionGrams}
+                              onChange={(e) => handlePortionChange(idx, e.target.value)}
+                            />
+                            <span className="text-slate-400">g</span>
+                          </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
-                            {item.calories} kcal
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 w-fit">
+                              {item.calories} kcal
+                            </span>
+                             <span className="text-[10px] text-slate-400 mt-1 pl-1">
+                              {item.minCalories}-{item.maxCalories}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-500 font-mono">
                           {item.macros.protein} / {item.macros.carbs} / {item.macros.fat}
